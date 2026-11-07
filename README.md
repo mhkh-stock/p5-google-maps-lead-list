@@ -1,5 +1,7 @@
 # P5 — Google Maps Lead List (built the legal way)
 
+**Repo:** https://github.com/mhkh-stock/p5-google-maps-lead-list
+
 **Area:** Gulberg, Lahore · **Niches:** cafes, restaurants, bakeries ·
 **Sourced:** 1 Nov 2026 · **Status: SAMPLE delivery**
 **Tools:** Python (stdlib urllib) · OpenStreetMap Nominatim API · SQLite · Excel
