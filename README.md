@@ -38,11 +38,13 @@ sheet — so the next run refreshes the list instead of rebuilding it.
 | `sql/schema.sql` | The leads schema |
 | `src/fetch_leads.py` | The fetcher: Nominatim search per niche, details enrichment per listing, dedupe by OSM object |
 | `src/build_excel.py` | Builds the Excel sheet from the database |
-| `src/checks.py` | Data-quality checks as code — 11 checks, all passing |
+| `src/checks.py` | Data-quality checks as code — 12 checks, all passing |
+| `data/README.md` | Data dictionary + source/licence note |
 
 ## 3 key findings (from this sample)
 
-1. **74 listings, 65 distinct names.** The 9 extra rows are not
+1. **74 listings, 64 distinct names (counted ignoring capitalisation —
+   "Shezan bakery" vs "Shezan Bakery" is one name).** The 10 extra rows are not
    duplicates: same-name rows sit at different coordinates (e.g.
    Gourmet Bakers & Sweets ×3, Kitchen Cuisine ×3) — separate
    branches, each a real lead. *So what:* a lead list that dedupes
@@ -56,8 +58,8 @@ sheet — so the next run refreshes the list instead of rebuilding it.
    template says so in the package note instead of faking full
    coverage.
 3. **Coverage is even across niches by design:** 25 cafes, 25
-   bakeries, 24 restaurants (one restaurant search hit had no usable
-   name and was dropped, not padded). *So what:* the fetcher takes a
+   bakeries, 24 restaurants (75 search hits → 74 leads: one hit did
+   not survive cleaning, not padded). *So what:* the fetcher takes a
    fixed cap per niche so no single niche crowds the list out.
 
 ## Verified numbers
@@ -66,15 +68,33 @@ sheet — so the next run refreshes the list instead of rebuilding it.
 |---|---|
 | Leads | 74 |
 | Cafes / bakeries / restaurants | 25 / 25 / 24 |
-| Distinct business names | 65 |
+| Distinct business names | 64 (ignoring capitalisation) |
 | With phone | 5 |
 | With website | 4 |
 | Ratings | all `n/a` (OSM has none — never invented) |
 | Source date | 1 Nov 2026 |
 
-Verification: `python3 src/checks.py` (11 checks pass) plus an
+Verification: `python3 src/checks.py` (12 checks pass) plus an
 independent reopen of the Excel file — 74 rows, names matching the
 database exactly, Summary totals as formulas.
+
+## Limits — read before reusing
+
+- **"Gulberg" is the search area, not a verified boundary.** The
+  fetcher asks Nominatim for businesses "in Gulberg, Lahore", and
+  Nominatim returns near matches too: 23 of the 74 addresses name no
+  Gulberg locality, and a few name adjacent areas (Ichhra, Model
+  Town, DHA Phase 3). A real order should filter by an agreed
+  Gulberg boundary before calling.
+- **Names are verbatim from OSM, quirks included.** One row reads
+  `gourmet ` with a trailing space, and "Shezan bakery" /
+  "Shezan Bakery" differ only by capitalisation — the distinct-name
+  count (64) ignores capitalisation for that reason. Addresses are
+  Nominatim display names in mixed Urdu/Latin script.
+- **Re-fetching is live.** `src/fetch_leads.py` hits the live
+  Nominatim API, so a re-run may return a different count than 74
+  as OSM changes; the 74-lead sample above is the frozen 1 Nov 2026
+  snapshot in `data/raw/` and `data/processed/`.
 
 ## How to run it (under 5 steps)
 

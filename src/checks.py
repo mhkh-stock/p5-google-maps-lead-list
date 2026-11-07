@@ -1,10 +1,11 @@
 """P5 verification — reopen the database and the Excel file and check them.
 
-Checks: 74 leads; niche split 25/25/24; every row has a name, an
-address and an OSM link; no two rows share an OSM link (dedupe by
-object); same-name rows sit at different coordinates (branches, not
-dupes); phone/website counts match the fetch log (5/4); the Excel
-file holds the same 74 rows and its Summary totals are formulas.
+Checks: 74 leads; niche split 25/25/24; 64 distinct names ignoring
+capitalisation; every row has a name, an address and an OSM link; no
+two rows share an OSM link (dedupe by object); same-name rows sit at
+different coordinates (branches, not dupes); phone/website counts
+match the fetch log (5/4); the Excel file holds the same 74 rows and
+its Summary totals are formulas.
 """
 import sqlite3
 import sys
@@ -32,6 +33,9 @@ split = dict(con.execute(
     "SELECT niche, COUNT(*) FROM leads GROUP BY niche").fetchall())
 check("niche split 25/25/24",
       split == {"bakery": 25, "cafe": 25, "restaurant": 24}, str(split))
+check("distinct names = 64 (case-insensitive)",
+      con.execute("SELECT COUNT(DISTINCT lower(business_name)) FROM leads")
+      .fetchone()[0] == 64)
 check("all rows have name + address + OSM link",
       all(r[1] and r[5] and r[10] for r in rows))
 check("no duplicate OSM links",
@@ -53,8 +57,8 @@ wb = load_workbook(XLSX)
 ws = wb["Leads"]
 xrows = [r for r in ws.iter_rows(min_row=2, values_only=True) if r[0] is not None]
 check("excel rows = 74", len(xrows) == 74, f"got {len(xrows)}")
-check("excel names match database",
-      {r[0] for r in xrows} == {r[1] for r in rows})
+check("excel names match database (multiset)",
+      sorted(r[0] for r in xrows) == sorted(r[1] for r in rows))
 sm = wb["Summary"]
 check("summary totals are formulas",
       all(str(sm.cell(row=5, column=c).value).startswith("=") for c in (2, 3, 4)))
